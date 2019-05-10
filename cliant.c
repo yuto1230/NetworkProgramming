@@ -3,23 +3,39 @@
 #include<unistd.h>
 #include<string.h>
 #include<stdio.h>
+#include<stdlib.h>
+#define BUF_SEZ 256
+void DieWithError(char*errorMessage){
+	perror(errorMessage);
+	exit(1);
+}
 void commun(int sock){
-	char buf[256];
+	char buf[BUF_SEZ];
 	int len_r;
-	char*message = "ˆ³“|“I—¯”N¶II“O’ê“I—¯”N¶II —¯”N¶‚Ì‚½‚ß‚Ì—¯”N‘ìII\n";
-	send(sock,message,strlen(message),0);
-	len_r = recv(sock,buf,256,0);
+	char*message =  "æ®ºã—ãŸã‹ã£ãŸã ã‘ã§æ­»ã‚“ã§ã»ã—ãã¯ãªã‹ã£ãŸ\n";//"ã“ã‚Œã‹ã‚‰æ¯æ—¥å˜ä½ã‚’ç„¼ã“ã†ãœ\n"; //"åœ§å€’çš„ç•™å¹´ç”Ÿï¼ï¼å¾¹åº•çš„ç•™å¹´ç”Ÿï¼ï¼ ç•™å¹´ç”Ÿã®ãŸã‚ã®ç•™å¹´å“ï¼ï¼\n";
+	if (send(sock,message,strlen(message),0) != strlen(message))
+		DieWithError("send()sent a message of unexpected bytes");
+	if ((len_r = recv(sock,buf,BUF_SEZ,0)) <= 0)
+		DieWithError("recv()failed");
 	buf[len_r] = '\0';
 	printf("%s\n",buf);
 }
-int main(int srgc,char**argv){
+int main(int argc,char**argv){
+	if(argc != 3)
+	DieWithError("arguments is not available");
+	char*senver_ipaddr = argv[1]; //"10.13.64.20"
+	int server_port = atoi (argv[2]);//10001;
 	int sock = socket(PF_INET,SOCK_STREAM,0);
-	printf("”L‚Å‚·%d\n",sock);
+	if(sock < 0)
+		DieWithError("socket()failed");
+	printf("%d\n",sock);
 	struct sockaddr_in target;
 	target.sin_family = AF_INET;
-	target.sin_addr.s_addr = inet_addr("10.13.64.20");
-	target.sin_port = htons(10001);
-	connect(sock,(struct sockaddr*)&target,sizeof(target));
+	target.sin_addr.s_addr = inet_addr(senver_ipaddr);
+	target.sin_port = htons(server_port);
+	if (connect(sock,(struct sockaddr*)&target,sizeof(target))<0)
+		DieWithError("connect()failed");
+	
 	commun(sock);
 	close(sock);
 	return 0;
